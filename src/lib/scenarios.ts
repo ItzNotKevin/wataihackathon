@@ -61,6 +61,11 @@ export const SCENARIOS: Scenario[] = [
       "Ask what is wrong with the child and if they know when the child will return",
       "Confirm you have recorded the absence and wish them well",
     ],
+    userSteps: [
+      { en: 'Say your child is sick and will not come today', roh: 'Kou — tumar bacha aij aste farbo na, se asom' },
+      { en: 'Give your child\'s name and grade', roh: 'Tumar bachar nam o class kou' },
+      { en: 'Say when your child will return', roh: 'Kou — tumar bacha kobe aisbo' },
+    ],
   },
   {
     id: 'school-teacher',
@@ -77,6 +82,11 @@ export const SCENARIOS: Scenario[] = [
       "Ask the parent which subject or skill the child is finding difficult",
       "Explain what kind of help is available and ask if the child does reading at home",
       "Offer a concrete next step and thank the parent for coming in",
+    ],
+    userSteps: [
+      { en: 'Say your child needs help with reading', roh: 'Kou — tumar bacha porar help dorkar' },
+      { en: 'Say if your child reads at home', roh: 'Kou — se bariate pore kina' },
+      { en: 'Ask what help is available', roh: 'Jiggesh koro — ki help pawa zabe' },
     ],
   },
 
@@ -97,6 +107,11 @@ export const SCENARIOS: Scenario[] = [
       "Offer two available time slots and ask which works better",
       "Confirm the appointment details — date, time, and what to bring",
     ],
+    userSteps: [
+      { en: 'Say you need a doctor appointment for your sick child', roh: 'Kou — tumar bachar jonno daktar dorkar, se asom' },
+      { en: 'Give your child\'s name and choose a time', roh: 'Bachar nam kou ar time bachho' },
+      { en: 'Confirm the appointment details', roh: 'Appointment er din ar time pakka koro' },
+    ],
   },
   {
     id: 'healthcare-symptoms',
@@ -113,6 +128,11 @@ export const SCENARIOS: Scenario[] = [
       "Ask how long the child has had these symptoms and if they have a temperature",
       "Ask if the child has been eating or drinking, and if they have vomited",
       "Ask if the child has taken any medicine and note down the information",
+    ],
+    userSteps: [
+      { en: 'Describe your child\'s symptoms — fever, stomach pain', roh: 'Kou — bachar ki hoise, jor, pet betha' },
+      { en: 'Say if your child has been eating or drinking', roh: 'Kou — se khaisse kina ba pani khaise kina' },
+      { en: 'Say if your child has taken any medicine', roh: 'Kou — se kono dawai khaise kina' },
     ],
   },
 
@@ -133,6 +153,11 @@ export const SCENARIOS: Scenario[] = [
       "Ask how old the baby is and recommend a suitable formula option",
       "Confirm the item and ask if there is anything else they need",
     ],
+    userSteps: [
+      { en: 'Ask where to find baby formula', roh: 'Jiggesh koro — baby formula kothai ase' },
+      { en: 'Say your baby\'s age — 6 months', roh: 'Kou — tumar bachar bois koto, choi mas' },
+      { en: 'Thank them and confirm the item', roh: 'Shukriya kou ar jinis pakka koro' },
+    ],
   },
   {
     id: 'everyday-directions',
@@ -149,6 +174,11 @@ export const SCENARIOS: Scenario[] = [
       "Ask where they are trying to go and confirm the destination",
       "Give simple bus directions — which bus number, where to board, and where to get off",
       "Tell them how long it will take and wish them a good trip",
+    ],
+    userSteps: [
+      { en: 'Ask how to get to the library by bus', roh: 'Jiggesh koro — library zaibar jonno kon bus nibo' },
+      { en: 'Ask which bus number and where to get off', roh: 'Jiggesh koro — kon number bus ar kothai nambo' },
+      { en: 'Ask how long it will take', roh: 'Jiggesh koro — koto time lagbo' },
     ],
   },
 
@@ -169,6 +199,11 @@ export const SCENARIOS: Scenario[] = [
       'Explain what they should bring or wear on the first day',
       'Offer encouragement and confirm where to meet when they arrive',
     ],
+    userSteps: [
+      { en: 'Ask what time your first shift starts', roh: 'Jiggesh koro — prothom din koto baje ashbo' },
+      { en: 'Ask what to bring on the first day', roh: 'Jiggesh koro — prothom din ki niye ashbo' },
+      { en: 'Ask where to meet when you arrive', roh: 'Jiggesh koro — ashar pore kothai zabo' },
+    ],
   },
   {
     id: 'work-repeat',
@@ -185,6 +220,11 @@ export const SCENARIOS: Scenario[] = [
       'Repeat the instructions in a slightly different way and ask what part was confusing',
       'Speak more slowly and check if they understand the first task',
       'Encourage them to ask again anytime they need help',
+    ],
+    userSteps: [
+      { en: 'Ask them to repeat slowly — you are learning English', roh: 'Kou — amar Ingreji sikh te ase, asta asta abar kou' },
+      { en: 'Say which part you did not understand', roh: 'Kou — ki bujhi nai sheta kou' },
+      { en: 'Say thank you and that you understand now', roh: 'Kou — shukriya, ekhon bujhi gesi' },
     ],
   },
 
@@ -205,6 +245,11 @@ export const SCENARIOS: Scenario[] = [
       'Ask if they are new to the neighbourhood and how they are settling in',
       'Respond warmly and say it was nice meeting them',
     ],
+    userSteps: [
+      { en: 'Say hello and tell them your name', roh: 'Salam kou ar tumar nam kou' },
+      { en: 'Say where you are from and that you are new here', roh: 'Kou — tumi kothai theke aseso ar ei jaiga naya' },
+      { en: 'Say it is nice to meet them', roh: 'Kou — tomar shathe dekha hoise bhalo lagse' },
+    ],
   },
   {
     id: 'general-help',
@@ -221,6 +266,11 @@ export const SCENARIOS: Scenario[] = [
       'Ask what they need help with and encourage them to explain in simple words',
       'Repeat the information slowly and ask if it makes more sense now',
       'Offer one more chance for questions and reassure them that asking is okay',
+    ],
+    userSteps: [
+      { en: 'Ask for help politely', roh: 'Bhalo moto help maango' },
+      { en: 'Say what you need help with', roh: 'Kou — kisher jonno help dorkar' },
+      { en: 'Say thank you', roh: 'Shukriya kou' },
     ],
   },
 ];

@@ -22,6 +22,13 @@ export const ROHINGYA_UI = {
   backHome: 'Bari zai',
   categoryPrompt: 'Fikra',
   of: 'moddhe',
+  // Conversation screen
+  connecting: 'Lagaise...',
+  speakNow: 'Ekhon kou',
+  aiSpeaking: 'Huno — se koisse',
+  waitForTurn: 'Thaako — se koite ase',
+  analyzing: 'Dekhaise...',
+  conversationDone: 'Ses hoiye gese',
   categories: {
     healthcare: 'Daktar',
     school: 'Iskul',

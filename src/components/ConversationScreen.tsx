@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { ArrowLeft, Home, Loader2, PhoneOff, Play, Target, Turtle } from 'lucide-react';
 import type { Mode } from '@11labs/client';
 import type { Message, Scenario, Struggle, SupportFeedback } from '../types';
-import { detectStruggle, generateSupportFeedback } from '../lib/gemini';
+import { checkStepCompleted, detectStruggle, generateSupportFeedback } from '../lib/gemini';
 import { startConversationSession } from '../lib/elevenLabsConversation';
 import type { ConversationSession } from '../lib/elevenLabsConversation';
 import { ROHINGYA_UI } from '../lib/rohingya';
@@ -30,21 +30,31 @@ export function ConversationScreen({
   const primarySurface = 'linear-gradient(135deg, #33424d, #5a6772)';
   const warmSurface = 'linear-gradient(160deg, rgba(255, 252, 247, 0.96) 0%, rgba(243, 236, 227, 0.92) 100%)';
   const softPanel = 'rgba(255, 251, 247, 0.88)';
+  const accentColor = '#b47b67';
+
   const [phase, setPhase] = useState<Phase>('connecting');
   const [mode, setMode] = useState<Mode>('listening');
   const [messages, setMessages] = useState<Message[]>([]);
   const [errorMsg, setErrorMsg] = useState('');
+  const [stepsPassed, setStepsPassed] = useState<boolean[]>(
+    () => new Array(scenario.userSteps.length).fill(false),
+  );
   const { speak, speakSlow, isSpeaking } = useTextToSpeech();
 
   const sessionRef = useRef<ConversationSession | null>(null);
   const messagesRef = useRef<Message[]>([]);
   const userTurnCountRef = useRef(0);
+  const stepsPassedRef = useRef<boolean[]>(new Array(scenario.userSteps.length).fill(false));
   const analysisRanRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  useEffect(() => {
+    stepsPassedRef.current = stepsPassed;
+  }, [stepsPassed]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -91,6 +101,9 @@ export function ConversationScreen({
 
     async function init() {
       try {
+        // Explicitly request mic permission before ElevenLabs tries to claim it
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+
         const session = await startConversationSession({
           agentId: AGENT_ID!,
           firstMessage: scenario.openingLine,
@@ -104,20 +117,43 @@ export function ConversationScreen({
 
             if (role === 'user') {
               userTurnCountRef.current += 1;
+              // Find the first step not yet passed and check it
+              const stepIndex = stepsPassedRef.current.findIndex((p) => !p);
+              const stepInstruction = stepIndex >= 0 ? scenario.userSteps[stepIndex]?.en : undefined;
+              if (stepInstruction) {
+                const lastAiMsg = messagesRef.current
+                  .filter((m) => m.role === 'ai')
+                  .slice(-1)[0]?.text;
+                void checkStepCompleted(stepInstruction, text, lastAiMsg).then((passed) => {
+                  if (passed) {
+                    setStepsPassed((prev) => {
+                      const next = [...prev];
+                      next[stepIndex] = true;
+                      stepsPassedRef.current = next;
+                      return next;
+                    });
+                  }
+                });
+              }
             }
           },
           onModeChange: (nextMode) => setMode(nextMode),
           onStatusChange: (status) => {
-            if (status === 'connected') {
-              setPhase('active');
-            }
+            if (status === 'connected') setPhase('active');
           },
           onDisconnect: () => {
+            if (cancelled) return;
             if (userTurnCountRef.current > 0) {
               void runAnalysis();
-            } else if (!cancelled) {
-              setErrorMsg('Connection ended before the conversation started. Please try again.');
-              setPhase('error');
+            } else {
+              // Delay the error slightly — StrictMode fires a mount/unmount/remount
+              // cycle in dev, causing a spurious disconnect on the first mount.
+              setTimeout(() => {
+                if (!cancelled) {
+                  setErrorMsg('Connection ended before the conversation started. Please try again.');
+                  setPhase('error');
+                }
+              }, 1500);
             }
           },
           onError: (err) => {
@@ -147,7 +183,7 @@ export function ConversationScreen({
     };
   }, [runAnalysis, scenario.openingLine]);
 
-  const userTurns = messages.filter((m) => m.role === 'user').length;
+  const stepsDone = stepsPassed.filter(Boolean).length;
   const isActive = phase === 'active';
   const isBusy = phase === 'connecting' || phase === 'ending' || phase === 'analyzing';
   const statusLabel =
@@ -174,17 +210,19 @@ export function ConversationScreen({
             </span>
           </button>
         </header>
+
         <main className="main-content">
           <section
             className="practice-view animate-fade-in glass-panel"
             aria-label="Conversation practice"
             style={{ background: warmSurface }}
           >
+            {/* Progress bar — based on steps passed */}
             <div className="progress-bar" aria-hidden="true">
               <div
                 className="progress-fill"
                 style={{
-                  width: `${Math.max(8, (userTurns / scenario.maxTurns) * 100)}%`,
+                  width: `${Math.max(8, (stepsDone / scenario.maxTurns) * 100)}%`,
                   background: 'linear-gradient(90deg, #b47b67, #d8b79a)',
                 }}
               />
@@ -197,9 +235,7 @@ export function ConversationScreen({
               </button>
 
               <div className="flex items-center gap-2 rounded-full bg-white/75 px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm">
-                <span
-                  className={`h-2.5 w-2.5 rounded-full ${isActive ? 'bg-green-400' : 'bg-slate-300'}`}
-                />
+                <span className={`h-2.5 w-2.5 rounded-full ${isActive ? 'bg-green-400' : 'bg-slate-300'}`} />
                 <span className="capitalize">{statusLabel}</span>
               </div>
             </div>
@@ -207,29 +243,67 @@ export function ConversationScreen({
             <div className="practice-intro mt-6">
               <span
                 className="category-tag"
-                style={{
-                  color: '#b47b67',
-                  borderColor: 'rgba(180, 123, 103, 0.24)',
-                }}
+                style={{ color: accentColor, borderColor: 'rgba(180, 123, 103, 0.24)' }}
               >
-                {scenario.title} · {userTurns} / {scenario.maxTurns} turns
+                {scenario.title} · {stepsDone} / {scenario.maxTurns} steps done
               </span>
               <p className="practice-support">Speak with the AI helper and answer in your own words.</p>
             </div>
 
+            {/* Step checklist */}
             <div
-              className="mx-auto mb-6 flex max-w-2xl items-start gap-3 rounded-[1.4rem] px-4 py-4"
+              className="mx-auto mb-6 w-full max-w-2xl rounded-[1.4rem] px-4 py-4"
               style={{ background: 'rgba(255,251,247,0.88)', border: '1px solid rgba(180, 123, 103, 0.16)' }}
             >
-              <Target size={18} className="mt-0.5 flex-shrink-0" style={{ color: '#b47b67' }} />
-              <div>
-                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em]" style={{ color: '#b47b67' }}>
-                  Goal
+              <div className="flex items-center gap-2 mb-3">
+                <Target size={14} style={{ color: accentColor }} />
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em]" style={{ color: accentColor }}>
+                  Your steps
                 </p>
-                <p className="mt-1 text-sm leading-relaxed text-slate-700">{scenario.goal}</p>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                {scenario.userSteps.map((step, i) => {
+                  const passed = stepsPassed[i];
+                  const isNext = !passed && stepsPassed.slice(0, i).every(Boolean);
+                  return (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <span
+                        className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                        style={{
+                          background: passed
+                            ? 'linear-gradient(135deg, #b47b67, #d8b79a)'
+                            : isNext
+                            ? 'rgba(180,123,103,0.15)'
+                            : '#f1f5f9',
+                          color: passed ? 'white' : isNext ? accentColor : '#94a3b8',
+                        }}
+                      >
+                        {passed ? '✓' : i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className="text-sm leading-snug font-medium"
+                          style={{
+                            color: passed ? '#94a3b8' : isNext ? '#1e293b' : '#94a3b8',
+                            textDecoration: passed ? 'line-through' : 'none',
+                          }}
+                        >
+                          {step.en}
+                        </p>
+                        <p
+                          className="text-xs leading-snug mt-0.5"
+                          style={{ color: passed ? '#cbd5e1' : isNext ? accentColor : '#cbd5e1' }}
+                        >
+                          {step.roh}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
+            {/* Hear prompt buttons */}
             <div className="mx-auto mb-6 flex w-full max-w-2xl flex-col gap-3 sm:flex-row sm:justify-center">
               <button
                 className="btn action-btn text-white"
@@ -257,6 +331,7 @@ export function ConversationScreen({
               </button>
             </div>
 
+            {/* Chat window */}
             <div
               className="mx-auto flex w-full max-w-3xl flex-col gap-3 rounded-[1.8rem] border border-white/80 p-4 shadow-sm"
               style={{ background: softPanel }}
@@ -303,6 +378,7 @@ export function ConversationScreen({
               </div>
             </div>
 
+            {/* Status / voice orb panel */}
             <div className="feedback-panel mt-8 max-w-none border-t-0 pt-0">
               {phase === 'error' && (
                 <div className="rounded-[1.4rem] border border-red-100 bg-red-50 px-4 py-4 text-sm leading-relaxed text-red-600">
@@ -312,7 +388,7 @@ export function ConversationScreen({
 
               {(phase === 'connecting' || phase === 'ending' || phase === 'analyzing') && (
                 <div className="flex flex-col items-center gap-3 rounded-[1.4rem] border border-white/80 bg-white/78 px-5 py-6 text-center shadow-sm">
-                  <Loader2 size={28} className="animate-spin" style={{ color: '#b47b67' }} />
+                  <Loader2 size={28} className="animate-spin" style={{ color: accentColor }} />
                   <p className="text-sm font-medium text-slate-600">
                     {phase === 'connecting' && 'Connecting...'}
                     {phase === 'ending' && 'Finishing up...'}
@@ -323,7 +399,7 @@ export function ConversationScreen({
 
               {isActive && (
                 <div className="flex flex-col items-center gap-5 rounded-[1.6rem] border border-white/80 bg-white/78 px-5 py-6 shadow-sm">
-                  <VoiceOrb mode={mode} color="#b47b67" />
+                  <VoiceOrb mode={mode} color={accentColor} />
                   <button onClick={() => void endConversation()} className="btn btn-secondary">
                     <PhoneOff size={18} />
                     <span>End conversation</span>

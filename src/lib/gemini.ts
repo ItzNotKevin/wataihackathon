@@ -128,6 +128,38 @@ Reply as the ${scenario.aiRole}. 1-2 sentences only.`;
   return generate(prompt, systemInstruction, 0.7, 300, true);
 }
 
+// ─── Step completion check ────────────────────────────────────────────────────
+
+export async function checkStepCompleted(
+  stepInstruction: string,
+  userSaid: string,
+  aiAsked?: string,
+): Promise<boolean> {
+  const prompt = `You are checking whether a language learner completed a speaking task in an English practice conversation.
+
+${aiAsked ? `The AI just said to them: "${aiAsked}"\n` : ''}TASK the learner needed to complete: "${stepInstruction}"
+WHAT THE LEARNER SAID: "${userSaid}"
+
+Decide YES or NO:
+- YES if they communicated the required information, even with broken grammar or simple words
+- YES if the meaning is clearly there even if phrased differently (e.g. "my son name is Ali" counts for giving a name)
+- NO if they asked to repeat, said hello, or said something completely unrelated to the task
+- NO if they only said filler words (e.g. "um", "okay", "yes") with no actual content
+
+Reply with only YES or NO.`;
+
+  try {
+    const raw = await generate(prompt, undefined, 0.1, 50, true);
+    const upper = raw.trim().toUpperCase();
+    const passed = upper.startsWith('YES') || upper.startsWith('**YES') || /^[\s\*]*YES/.test(upper);
+    console.log('[checkStepCompleted]', { stepInstruction, userSaid, aiAsked, raw, passed });
+    return passed;
+  } catch (e) {
+    console.error('[checkStepCompleted] error', e);
+    return false;
+  }
+}
+
 // ─── Per-turn struggle detection (runs in parallel with AI response) ──────────
 
 export async function detectStruggle(

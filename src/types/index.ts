@@ -23,6 +23,8 @@ export interface Scenario {
   targetVocab: string[];
   /** Natural follow-up questions the AI should work through, in order */
   followUpPrompts: string[];
+  /** User-facing step instructions shown as a checklist during the conversation */
+  userSteps: Array<{ en: string; roh: string }>;
 }
 
 export interface Message {
