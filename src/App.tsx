@@ -109,7 +109,7 @@ function App() {
     <div className="app-container">
       <header className="app-header">
         <div className="logo-container">
-          <div className="logo-pulse"></div>
+          <img src="/cute lil stuff.png" alt="MotherMind logo" className="logo-img" />
           <h1>MotherMind</h1>
         </div>
         {screen !== 'home' && (

@@ -147,13 +147,10 @@ h6 {
   gap: 0.75rem;
 }
 
-.logo-pulse {
-  width: 12px;
-  height: 12px;
-  background: var(--brand-gradient);
-  border-radius: 50%;
-  box-shadow: var(--shadow-glow);
-  animation: pulse-ring 3s infinite;
+.logo-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
 }
 
 .app-header h1 {
