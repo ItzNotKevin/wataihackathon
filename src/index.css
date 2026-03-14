@@ -34,8 +34,8 @@
   --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.3);
 
   /* Typography */
-  --font-sans: 'Cute Font', sans-serif;
-  --font-heading: 'Cute Font', sans-serif;
+  --font-sans: 'Open Sans', sans-serif;
+  --font-heading: 'Open Sans', sans-serif;
 
   /* Border Radius */
   --radius-md: 0.75rem;
@@ -86,7 +86,7 @@ h4,
 h5,
 h6 {
   font-family: var(--font-heading);
-  font-weight: 400;
+  font-weight: 700;
   line-height: 1.2;
 }
 
@@ -381,7 +381,7 @@ h6 {
   gap: 0.5rem;
   padding: 0.875rem 1.5rem;
   border-radius: var(--radius-full);
-  font-weight: 400;
+  font-weight: 600;
   font-family: var(--font-sans);
   cursor: pointer;
   transition: all 0.2s ease;
