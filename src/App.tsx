@@ -36,6 +36,36 @@ const TEST_ITEMS: PronunciationItem[] = [
   { label: 'Full sentence', text: 'My child has a fever and will not be coming to school today.' },
 ];
 
+function getSimplePracticeSentence(feedback: SupportFeedback): string {
+  const cleanedSentence = feedback.practice_sentence
+    .replace(/[—–-]/g, ', ')
+    .replace(/[:;]/g, ', ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const firstClause = cleanedSentence
+    .split(/[,.!?]/)
+    .map((part) => part.trim())
+    .find(Boolean);
+
+  if (firstClause) {
+    return `${firstClause.charAt(0).toUpperCase()}${firstClause.slice(1)}.`;
+  }
+
+  return feedback.practice_sentence;
+}
+
+function getBuildUpPhrase(feedback: SupportFeedback): string {
+  const sentence = getSimplePracticeSentence(feedback).replace(/[.!?]+$/, '');
+  const words = sentence.split(/\s+/).filter(Boolean);
+
+  if (words.length >= 3) {
+    return words.slice(0, Math.min(4, words.length - 1)).join(' ');
+  }
+
+  return feedback.practice_phrase;
+}
+
 function getPracticeItems(feedback: SupportFeedback, struggles: Struggle[]): PronunciationItem[] {
   const struggleTerms = [...new Set(
     struggles
@@ -46,8 +76,8 @@ function getPracticeItems(feedback: SupportFeedback, struggles: Struggle[]): Pro
 
   const fallbackItems = [
     { label: 'Word', text: feedback.practice_word },
-    { label: 'Phrase', text: feedback.practice_phrase },
-    { label: 'Full sentence', text: feedback.practice_sentence },
+    { label: 'Phrase', text: getBuildUpPhrase(feedback) },
+    { label: 'Short sentence', text: getSimplePracticeSentence(feedback) },
   ];
 
   const struggleItems = struggleTerms.map((term) => ({
@@ -270,7 +300,7 @@ export default function App() {
       <PronunciationScreen
         items={pronunciationItems}
         categoryColor={category?.color ?? '#7c3aed'}
-        onDone={handleGoToTopics}
+        onDone={handleGoHome}
       />
     );
   }

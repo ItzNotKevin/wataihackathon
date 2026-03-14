@@ -261,6 +261,19 @@ export function PronunciationScreen({ items, categoryColor, onDone }: Pronunciat
                       <span className="text-[0.72rem] font-medium opacity-75">{ROHINGYA_UI.exit}</span>
                     </span>
                   </button>
+                  <button
+                    className="btn btn-primary practice-inline-btn"
+                    onClick={handleNext}
+                    disabled={phase === 'analyzing'}
+                  >
+                    <span className="flex flex-col items-start leading-tight">
+                      <span>{itemIndex < items.length - 1 ? 'Next' : 'Finish'}</span>
+                      <span className="text-[0.72rem] font-medium opacity-80">
+                        {itemIndex < items.length - 1 ? ROHINGYA_UI.nextPhrase : ROHINGYA_UI.finish}
+                      </span>
+                    </span>
+                    <ChevronRight size={18} />
+                  </button>
                 </div>
               </div>
 
@@ -289,6 +302,23 @@ export function PronunciationScreen({ items, categoryColor, onDone }: Pronunciat
                     <h4 style={{ color: '#b47b67' }}>
                       {scoreStyle.emoji} {feedback.message}
                     </h4>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-center rounded-[1.2rem] px-4 py-5"
+                    style={{
+                      background: feedback.score !== 'try_again' ? '#f0fdf4' : '#fef2f2',
+                      border: `1px solid ${feedback.score !== 'try_again' ? '#bbf7d0' : '#fecaca'}`,
+                    }}
+                  >
+                    <div
+                      className="flex items-center gap-3"
+                      style={{ color: feedback.score !== 'try_again' ? '#16a34a' : '#dc2626' }}
+                    >
+                      <CheckCircle2 size={30} />
+                      <span className="text-base font-semibold">
+                        {feedback.score !== 'try_again' ? 'Right' : 'Wrong'}
+                      </span>
+                    </div>
                   </div>
 
                   {feedback.word_tips && <p>{feedback.word_tips}</p>}

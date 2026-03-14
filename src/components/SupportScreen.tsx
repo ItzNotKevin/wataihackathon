@@ -50,6 +50,36 @@ function normalizeText(value: string): string[] {
     .filter(Boolean);
 }
 
+function getSimplePracticeSentence(feedback: SupportFeedback): string {
+  const cleanedSentence = feedback.practice_sentence
+    .replace(/[—–-]/g, ', ')
+    .replace(/[:;]/g, ', ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const firstClause = cleanedSentence
+    .split(/[,.!?]/)
+    .map((part) => part.trim())
+    .find(Boolean);
+
+  if (firstClause) {
+    return `${firstClause.charAt(0).toUpperCase()}${firstClause.slice(1)}.`;
+  }
+
+  return feedback.practice_sentence;
+}
+
+function getBuildUpPhrase(feedback: SupportFeedback): string {
+  const sentence = getSimplePracticeSentence(feedback).replace(/[.!?]+$/, '');
+  const words = sentence.split(/\s+/).filter(Boolean);
+
+  if (words.length >= 3) {
+    return words.slice(0, Math.min(4, words.length - 1)).join(' ');
+  }
+
+  return feedback.practice_phrase;
+}
+
 function levenshteinDistance(a: string, b: string): number {
   const dp = Array.from({ length: a.length + 1 }, (_, i) =>
     Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)),
@@ -139,8 +169,8 @@ export function SupportScreen({
 
     const fallbackSteps: PracticeStep[] = [
       { id: 'word', label: 'Word', text: feedback.practice_word },
-      { id: 'phrase', label: 'Phrase', text: feedback.practice_phrase },
-      { id: 'sentence', label: 'Full sentence', text: feedback.practice_sentence },
+      { id: 'phrase', label: 'Phrase', text: getBuildUpPhrase(feedback) },
+      { id: 'sentence', label: 'Short sentence', text: getSimplePracticeSentence(feedback) },
     ];
 
     return [...focusSteps, ...fallbackSteps]
@@ -237,7 +267,7 @@ export function SupportScreen({
       return;
     }
 
-    setPhase('complete');
+    onGoHome();
   };
 
   return (
@@ -348,6 +378,18 @@ export function SupportScreen({
                         {isListening ? <MicOff size={18} /> : <Mic size={18} />}
                         <span>{isListening ? 'Listening...' : 'Speak'}</span>
                       </button>
+
+                      {phase !== 'complete' && (
+                        <button
+                          className="btn text-white"
+                          onClick={handleNext}
+                          disabled={!currentStep}
+                          style={{ background: primarySurface }}
+                        >
+                          <span>{stepIndex < practiceSteps.length - 1 ? 'Next' : 'Finish'}</span>
+                          <ChevronRight size={18} />
+                        </button>
+                      )}
                     </div>
 
                     <div className="rounded-[1.2rem] border border-white/80 bg-white/82 px-4 py-4">
@@ -384,6 +426,14 @@ export function SupportScreen({
                             {passedCurrentStep ? 'Right' : 'Wrong'}
                           </p>
                         </div>
+                        {passedCurrentStep && (
+                          <div className="mt-4 flex items-center justify-center rounded-[1.2rem] bg-green-50 px-4 py-5">
+                            <div className="flex items-center gap-3 text-green-600">
+                              <CheckCircle2 size={30} />
+                              <span className="text-base font-semibold">Correct</span>
+                            </div>
+                          </div>
+                        )}
                         <p className="mt-2 text-sm font-medium text-slate-700">
                           {passedCurrentStep ? 'You can go to the next one.' : 'Listen. Then try again.'}
                         </p>
