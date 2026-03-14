@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Loader2, Volume2, RotateCcw } from 'lucide-react';
-import type { Message, Scenario, SupportFeedback } from '../types';
+import { ArrowLeft, Loader2, Volume2, RotateCcw, Target } from 'lucide-react';
+import type { Message, Scenario, Struggle, SupportFeedback } from '../types';
 import { MicButton } from './MicButton';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
-import { getConversationResponse, generateSupportFeedback } from '../lib/gemini';
+import { getConversationResponse, detectStruggle, generateSupportFeedback } from '../lib/gemini';
 
 interface ConversationScreenProps {
   scenario: Scenario;
   categoryColor: string;
-  onComplete: (messages: Message[], feedback: SupportFeedback) => void;
+  onComplete: (messages: Message[], feedback: SupportFeedback, struggles: Struggle[]) => void;
   onBack: () => void;
 }
 
@@ -20,6 +20,7 @@ export function ConversationScreen({
   onBack,
 }: ConversationScreenProps) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [struggles, setStruggles] = useState<Struggle[]>([]);
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [turnCount, setTurnCount] = useState(0);
@@ -34,17 +35,15 @@ export function ConversationScreen({
     useSpeechRecognition();
   const { speak, isSpeaking } = useTextToSpeech();
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isAIThinking]);
 
-  // Sync live transcript → draft text box
   useEffect(() => {
     if (transcript) setDraftText(transcript);
   }, [transcript]);
 
-  // Initialize: speak opening line once
+  // Speak opening line once on mount
   useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
@@ -68,9 +67,21 @@ export function ConversationScreen({
     const newTurn = turnCount + 1;
     setTurnCount(newTurn);
 
+    // The AI message that prompted this user response
+    const lastAiMessage =
+      [...messages].reverse().find((m) => m.role === 'ai')?.text ?? scenario.openingLine;
+
     setIsAIThinking(true);
     try {
-      const aiText = await getConversationResponse(scenario, withUser, text);
+      // Run AI response + struggle detection in parallel — no added latency
+      const [aiText, struggle] = await Promise.all([
+        getConversationResponse(scenario, withUser, text),
+        detectStruggle(scenario, lastAiMessage, text, newTurn),
+      ]);
+
+      const newStruggles = [...struggles, struggle];
+      setStruggles(newStruggles);
+
       const withAI: Message[] = [...withUser, { role: 'ai', text: aiText }];
       setMessages(withAI);
       await speak(aiText);
@@ -78,8 +89,8 @@ export function ConversationScreen({
       if (newTurn >= scenario.maxTurns) {
         setIsDone(true);
         setIsAnalyzing(true);
-        const feedback = await generateSupportFeedback(scenario, withAI);
-        onComplete(withAI, feedback);
+        const feedback = await generateSupportFeedback(scenario, withAI, newStruggles);
+        onComplete(withAI, feedback, newStruggles);
       }
     } catch (err) {
       console.error(err);
@@ -136,8 +147,19 @@ export function ConversationScreen({
         </div>
       </div>
 
-      {/* Turn indicator */}
-      <div className="px-4 pt-3">
+      {/* Goal banner */}
+      <div
+        className="mx-4 mt-3 px-4 py-2.5 rounded-xl flex items-start gap-2"
+        style={{ background: `${categoryColor}12`, border: `1px solid ${categoryColor}25` }}
+      >
+        <Target size={15} className="mt-0.5 flex-shrink-0" style={{ color: categoryColor }} />
+        <p className="text-xs leading-relaxed font-medium" style={{ color: categoryColor }}>
+          {scenario.goal}
+        </p>
+      </div>
+
+      {/* Turn progress */}
+      <div className="px-4 pt-2.5">
         <div className="flex gap-1.5">
           {Array.from({ length: scenario.maxTurns }).map((_, i) => (
             <div
@@ -180,7 +202,7 @@ export function ConversationScreen({
                 {[0, 150, 300].map((delay) => (
                   <span
                     key={delay}
-                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                    className="w-2 h-2 bg-gray-300 rounded-full animate-bounce"
                     style={{ animationDelay: `${delay}ms` }}
                   />
                 ))}
@@ -189,7 +211,6 @@ export function ConversationScreen({
           </div>
         )}
 
-        {/* Analyzing indicator */}
         {isAnalyzing && (
           <div className="flex justify-center py-2">
             <div
@@ -206,7 +227,6 @@ export function ConversationScreen({
           </div>
         )}
 
-        {/* Error */}
         {error && (
           <div className="flex justify-center">
             <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl max-w-xs text-center">
@@ -221,7 +241,7 @@ export function ConversationScreen({
       {/* Input area */}
       {!isDone && (
         <div className="bg-white border-t border-gray-100 px-5 py-5 space-y-4">
-          {/* Transcript / typing preview */}
+          {/* Live transcript preview */}
           {(draftText || isListening) && (
             <div
               className="rounded-xl px-4 py-3 text-sm min-h-[44px] leading-relaxed"
@@ -232,7 +252,6 @@ export function ConversationScreen({
           )}
 
           <div className="flex items-center gap-4">
-            {/* Mic button */}
             <div className="flex-1 flex justify-center">
               <MicButton
                 isListening={isListening}
@@ -243,31 +262,28 @@ export function ConversationScreen({
               />
             </div>
 
-            {/* Redo / Send buttons */}
-            <div className="flex flex-col gap-2">
-              {draftText && !isListening && (
-                <>
-                  <button
-                    onClick={handleSubmit}
-                    disabled={!canSend}
-                    className="px-5 py-3 rounded-xl text-white font-semibold text-sm shadow-sm disabled:opacity-40 transition-all active:scale-95"
-                    style={{ background: categoryColor }}
-                  >
-                    Send →
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDraftText('');
-                      resetTranscript();
-                    }}
-                    className="px-4 py-2 rounded-xl bg-gray-100 text-gray-500 text-sm font-medium flex items-center gap-1.5 justify-center"
-                  >
-                    <RotateCcw size={13} />
-                    Redo
-                  </button>
-                </>
-              )}
-            </div>
+            {draftText && !isListening && (
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => void handleSubmit()}
+                  disabled={!canSend}
+                  className="px-5 py-3 rounded-xl text-white font-semibold text-sm shadow-sm disabled:opacity-40 transition-all active:scale-95"
+                  style={{ background: categoryColor }}
+                >
+                  Send →
+                </button>
+                <button
+                  onClick={() => {
+                    setDraftText('');
+                    resetTranscript();
+                  }}
+                  className="px-4 py-2 rounded-xl bg-gray-100 text-gray-500 text-sm font-medium flex items-center gap-1.5 justify-center"
+                >
+                  <RotateCcw size={13} />
+                  Redo
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Text fallback if speech not supported */}

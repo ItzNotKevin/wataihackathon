@@ -14,9 +14,15 @@ export interface Scenario {
   categoryId: CategoryId;
   title: string;
   description: string;
+  /** Shown to the user before the conversation starts — what they are trying to accomplish */
+  goal: string;
   aiRole: string;
   openingLine: string;
   maxTurns: number;
+  /** Key words/phrases the user should use in this scenario */
+  targetVocab: string[];
+  /** Natural follow-up questions the AI should work through, in order */
+  followUpPrompts: string[];
 }
 
 export interface Message {
@@ -31,4 +37,21 @@ export interface SupportFeedback {
   practice_phrase: string;
   practice_sentence: string;
   encouragement: string;
+}
+
+export type StruggleType = 'incomplete' | 'unclear' | 'missing_info' | 'wrong_vocab' | 'none';
+
+/** Records what the learner struggled with on a single turn */
+export interface Struggle {
+  turn: number;
+  aiAsked: string;
+  userSaid: string;
+  hasIssue: boolean;
+  issueType: StruggleType;
+  /** Specific words or phrases they should have used but didn't */
+  missingWords: string[];
+  /** What a clear, natural response would have sounded like */
+  betterResponse: string;
+  /** Short coach note — e.g. "forgot to give the child's name" */
+  note: string;
 }
