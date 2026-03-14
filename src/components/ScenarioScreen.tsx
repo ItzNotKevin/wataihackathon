@@ -1,4 +1,4 @@
-import { ArrowLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ArrowLeft, ChevronRight } from 'lucide-react';
 import type { Category, Scenario } from '../types';
 import { ROHINGYA_UI } from '../lib/rohingya';
 
@@ -36,7 +36,7 @@ export function ScenarioScreen({
 
         <div className="rounded-full bg-white/85 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">
           <span className="block">Choose practice</span>
-          <span className="block text-[0.72rem] font-medium opacity-75">{ROHINGYA_UI.chooseTopic}</span>
+          <span className="block text-[0.72rem] font-medium opacity-75">{ROHINGYA_UI.pickScenario}</span>
         </div>
       </div>
 
@@ -50,10 +50,16 @@ export function ScenarioScreen({
               {category.title}
             </p>
             <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-              Pick one moment
+              Pick one scenario
             </h2>
+            <p className="mt-1 text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-[#b47b67]/80">
+              {ROHINGYA_UI.pickScenario}
+            </p>
             <p className="mt-2 text-sm font-medium text-slate-500 sm:text-base">
               Choose one card and start speaking.
+            </p>
+            <p className="mt-1 text-[0.82rem] font-medium text-slate-400 sm:text-sm">
+              {ROHINGYA_UI.chooseCardSpeak}
             </p>
           </div>
 
@@ -98,7 +104,7 @@ export function ScenarioScreen({
                 </div>
 
                 <div className="hidden rounded-full bg-[#faf3ec] px-3 py-1 text-xs font-semibold text-[#b47b67] sm:block">
-                  Quick
+                  {ROHINGYA_UI.quick}
                 </div>
               </div>
 
@@ -114,11 +120,6 @@ export function ScenarioScreen({
               </div>
             </button>
           ))}
-        </div>
-
-        <div className="mt-4 flex items-center justify-center gap-2 rounded-[1.4rem] bg-white/75 px-4 py-4 text-center text-sm font-medium text-slate-600">
-          <Sparkles size={18} style={{ color: '#b47b67' }} />
-          <span>You will talk with an AI helper for 2 to 3 turns. Just try.</span>
         </div>
       </div>
     </section>

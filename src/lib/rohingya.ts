@@ -22,6 +22,9 @@ export const ROHINGYA_UI = {
   backHome: 'Bari zai',
   categoryPrompt: 'Fikra',
   of: 'moddhe',
+  pickScenario: 'Ekta obostha bachho',
+  chooseCardSpeak: 'Ekta card bachho aru kotha kou',
+  quick: 'Furan',
   // Conversation screen
   connecting: 'Lagaise...',
   speakNow: 'Ekhon kou',
