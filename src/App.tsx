@@ -5,18 +5,26 @@ import { HomeScreen } from './components/HomeScreen';
 import { ScenarioScreen } from './components/ScenarioScreen';
 import { ConversationScreen } from './components/ConversationScreen';
 import { SupportScreen } from './components/SupportScreen';
+import { PronunciationScreen } from './components/PronunciationScreen';
+import type { PronunciationItem } from './components/PronunciationScreen';
 import './index.css';
 
-type Screen = 'home' | 'scenario' | 'conversation' | 'support';
+const TEST_ITEMS: PronunciationItem[] = [
+  { label: 'Word', text: 'appointment' },
+  { label: 'Phrase', text: 'My child is sick today' },
+  { label: 'Full sentence', text: 'My child has a fever and will not be coming to school today.' },
+];
+
+type Screen = 'home' | 'scenario' | 'conversation' | 'support' | 'pronunciation' | 'pronunciation-test';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('home');
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
   const [supportFeedback, setSupportFeedback] = useState<SupportFeedback | null>(null);
-  // Collected per-turn struggle data — ready to power support mode
   const [struggles, setStruggles] = useState<Struggle[]>([]);
   const [retryCount, setRetryCount] = useState(0);
+  const [pronunciationItems, setPronunciationItems] = useState<PronunciationItem[]>([]);
 
   const handleSelectCategory = useCallback((categoryId: string) => {
     setSelectedCategory(categoryId as CategoryId);
@@ -40,6 +48,16 @@ export default function App() {
     [],
   );
 
+  const handleStartLesson = useCallback(() => {
+    if (!supportFeedback) return;
+    setPronunciationItems([
+      { label: 'Word', text: supportFeedback.practice_word },
+      { label: 'Phrase', text: supportFeedback.practice_phrase },
+      { label: 'Full sentence', text: supportFeedback.practice_sentence },
+    ]);
+    setScreen('pronunciation');
+  }, [supportFeedback]);
+
   const handleRetryScenario = useCallback(() => {
     setRetryCount((c) => c + 1);
     setSupportFeedback(null);
@@ -60,7 +78,23 @@ export default function App() {
   const scenarios = selectedCategory ? getScenariosForCategory(selectedCategory) : [];
 
   if (screen === 'home') {
-    return <HomeScreen categories={CATEGORIES} onSelectCategory={handleSelectCategory} />;
+    return (
+      <HomeScreen
+        categories={CATEGORIES}
+        onSelectCategory={handleSelectCategory}
+        onTestPronunciation={() => setScreen('pronunciation-test')}
+      />
+    );
+  }
+
+  if (screen === 'pronunciation-test') {
+    return (
+      <PronunciationScreen
+        items={TEST_ITEMS}
+        categoryColor="#7c3aed"
+        onDone={handleGoHome}
+      />
+    );
   }
 
   if (screen === 'scenario') {
@@ -90,8 +124,7 @@ export default function App() {
 
   if (screen === 'support') {
     if (!selectedScenario || !category || !supportFeedback) return null;
-    // struggles is stored in state and ready — pass it to SupportScreen when implemented
-    void struggles; // explicitly consumed to satisfy noUnusedLocals
+    void struggles;
     return (
       <SupportScreen
         scenario={selectedScenario}
@@ -99,6 +132,17 @@ export default function App() {
         categoryColor={category.color}
         onRetryScenario={handleRetryScenario}
         onGoHome={handleGoHome}
+        onStartLesson={handleStartLesson}
+      />
+    );
+  }
+
+  if (screen === 'pronunciation') {
+    return (
+      <PronunciationScreen
+        items={pronunciationItems}
+        categoryColor={category?.color ?? '#7c3aed'}
+        onDone={handleGoHome}
       />
     );
   }

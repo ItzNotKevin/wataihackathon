@@ -32,6 +32,7 @@ export async function startConversationSession(
 ): Promise<ConversationSession> {
   const session = await Conversation.startSession({
     agentId: options.agentId,
+    connectionType: 'webrtc',
     overrides: {
       agent: {
         prompt: { prompt: options.systemPrompt },

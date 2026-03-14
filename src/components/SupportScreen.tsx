@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Volume2, RotateCcw, Home } from 'lucide-react';
+import { Volume2, RotateCcw, Home, Mic } from 'lucide-react';
 import type { Scenario, SupportFeedback } from '../types';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 
@@ -9,6 +9,7 @@ interface SupportScreenProps {
   categoryColor: string;
   onRetryScenario: () => void;
   onGoHome: () => void;
+  onStartLesson?: () => void;
 }
 
 export function SupportScreen({
@@ -17,6 +18,7 @@ export function SupportScreen({
   categoryColor,
   onRetryScenario,
   onGoHome,
+  onStartLesson,
 }: SupportScreenProps) {
   const { speak, speakSlow } = useTextToSpeech();
   const [speakingId, setSpeakingId] = useState<string | null>(null);
@@ -128,6 +130,16 @@ export function SupportScreen({
 
         {/* Action buttons */}
         <div className="space-y-3 pt-2">
+          {onStartLesson && (
+            <button
+              onClick={onStartLesson}
+              className="w-full py-4 rounded-2xl text-white font-semibold text-base flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-transform"
+              style={{ background: 'linear-gradient(135deg, #7c3aed, #db2777)' }}
+            >
+              <Mic size={18} />
+              Practice Pronunciation
+            </button>
+          )}
           <button
             onClick={onRetryScenario}
             className="w-full py-4 rounded-2xl text-white font-semibold text-base flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform"

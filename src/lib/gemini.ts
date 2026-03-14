@@ -233,3 +233,56 @@ Return ONLY a valid JSON object. No markdown. No explanation. Just the JSON:
     };
   }
 }
+
+// ─── Pronunciation feedback ───────────────────────────────────────────────────
+
+export interface PronunciationFeedback {
+  score: 'great' | 'good' | 'try_again';
+  message: string;
+  word_tips: string;
+}
+
+export async function getPronunciationFeedback(
+  target: string,
+  spoken: string,
+): Promise<PronunciationFeedback> {
+  const prompt = `A language learner was asked to say this phrase:
+TARGET: "${target}"
+
+The speech recognition heard them say:
+HEARD: "${spoken}"
+
+Analyze how close the spoken version is to the target. Consider:
+- Words that are correct or nearly correct
+- Words that were missed or very different
+- Whether the overall meaning came through
+
+Return ONLY a valid JSON object. No markdown. No explanation:
+{
+  "score": "great" | "good" | "try_again",
+  "message": "1 warm sentence of encouragement",
+  "word_tips": "1 short specific tip on which word(s) to improve and how. If score is great, say 'Keep it up!'"
+}
+
+Use "great" if 90%+ of words match or are very close.
+Use "good" if the meaning came through but some words were off.
+Use "try_again" if many key words were missing or very different.`;
+
+  const raw = await generate(prompt, undefined, 0.3, 150);
+
+  try {
+    const cleaned = raw.replace(/```json\n?|\n?```|```/g, '').trim();
+    return JSON.parse(cleaned) as PronunciationFeedback;
+  } catch {
+    const normalize = (s: string) => s.toLowerCase().replace(/[^\w\s]/g, '').trim();
+    const targetWords = normalize(target).split(/\s+/);
+    const spokenWords = normalize(spoken).split(/\s+/);
+    const matches = targetWords.filter((w, i) => spokenWords[i] === w).length;
+    const ratio = targetWords.length > 0 ? matches / targetWords.length : 0;
+    return {
+      score: ratio >= 0.9 ? 'great' : ratio >= 0.6 ? 'good' : 'try_again',
+      message: ratio >= 0.9 ? 'Great job!' : ratio >= 0.6 ? 'Good try!' : "Let's try again.",
+      word_tips: 'Keep practicing!',
+    };
+  }
+}

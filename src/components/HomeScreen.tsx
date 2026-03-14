@@ -4,9 +4,10 @@ import type { Category } from '../types';
 interface HomeScreenProps {
   categories: Category[];
   onSelectCategory: (categoryId: string) => void;
+  onTestPronunciation?: () => void;
 }
 
-export function HomeScreen({ categories, onSelectCategory }: HomeScreenProps) {
+export function HomeScreen({ categories, onSelectCategory, onTestPronunciation }: HomeScreenProps) {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(160deg, #f5f0ff 0%, #fff5fb 50%, #fffbf0 100%)' }}>
       {/* Hero */}
@@ -35,6 +36,15 @@ export function HomeScreen({ categories, onSelectCategory }: HomeScreenProps) {
 
       {/* Category cards */}
       <div className="px-6 flex flex-col gap-4 flex-1">
+        {onTestPronunciation && (
+          <button
+            onClick={onTestPronunciation}
+            className="w-full py-3 rounded-2xl font-semibold text-sm text-center"
+            style={{ background: '#7c3aed18', color: '#7c3aed', border: '1.5px dashed #7c3aed60' }}
+          >
+            🎤 Test Pronunciation Screen
+          </button>
+        )}
         {categories.map((cat) => (
           <button
             key={cat.id}
